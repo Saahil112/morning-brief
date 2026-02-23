@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import feedparser
@@ -26,6 +26,23 @@ def _fingerprint(title: str) -> str:
     return hashlib.md5(title.strip().lower().encode()).hexdigest()
 
 
+def _is_recent(entry: Any, cutoff: datetime) -> bool:
+    """Return True if the entry was published/updated within the cutoff window."""
+    import calendar
+    import time
+
+    for key in ("published_parsed", "updated_parsed"):
+        tp = entry.get(key)
+        if tp:
+            try:
+                entry_dt = datetime.fromtimestamp(calendar.timegm(tp), tz=timezone.utc)
+                return entry_dt >= cutoff
+            except (ValueError, OverflowError, OSError):
+                continue
+    # If no parseable date is available, exclude the entry
+    return False
+
+
 def fetch_all(feeds: list[str] | None = None) -> list[dict[str, Any]]:
     """
     Fetch and merge entries from all RSS feeds.
@@ -36,6 +53,7 @@ def fetch_all(feeds: list[str] | None = None) -> list[dict[str, Any]]:
     feeds = feeds or DEFAULT_FEEDS
     seen: set[str] = set()
     stories: list[dict[str, Any]] = []
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
 
     with tracer.start_as_current_span("fetch_all") as span:
         span.set_attribute("feeds.count", len(feeds))
@@ -49,6 +67,8 @@ def fetch_all(feeds: list[str] | None = None) -> list[dict[str, Any]]:
                     feed_span.set_attribute("feed.source", source)
                     feed_span.set_attribute("feed.entries", len(parsed.entries))
                     for entry in parsed.entries:
+                        if not _is_recent(entry, cutoff):
+                            continue
                         title = entry.get("title", "").strip()
                         if not title:
                             continue

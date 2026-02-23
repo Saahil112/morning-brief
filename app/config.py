@@ -96,7 +96,7 @@ SEC_HEADLINE_MAX: int = int(os.getenv("SEC_HEADLINE_MAX", "2"))
 SEC_GLOBAL_MAX: int = int(os.getenv("SEC_GLOBAL_MAX", "4"))
 SEC_AI_TECH_MAX: int = int(os.getenv("SEC_AI_TECH_MAX", "3"))
 SEC_MACRO_MAX: int = int(os.getenv("SEC_MACRO_MAX", "3"))
-SEC_MERGER_MAX: int = int(os.getenv("SEC_MERGER_MAX", "4"))
+SEC_MERGER_MAX: int = int(os.getenv("SEC_MERGER_MAX", "3"))
 SEC_WATCHLIST_MAX: int = int(os.getenv("SEC_WATCHLIST_MAX", "5"))
 
 # ── Per-story word cap ─────────────────────────────────────────────────────
