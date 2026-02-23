@@ -40,33 +40,52 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 # ── LLM summariser prompt ──────────────────────────────────────────────────
 
 _SUMMARY_SYSTEM = """\
-You are a senior intelligence analyst writing a morning brief for a
-decision-maker. Rules:
+You are writing a high-signal morning brief for an informed reader.
+The goal is clarity and consequence, not narration.
 
-- Crisp, analytical tone. No filler, no fluff.
-- NEVER use em dashes (--) or the unicode em dash character.
-- Each summary must be {max_words} words or fewer.
-- Start with the key fact, then explain why it matters.
-- Use short sentences. Structured logic.
+Rules:
+- Open with the decisive fact or shift. No scene-setting.
+- Explain what changed, who is affected, and what follows.
+- Be analytical, not descriptive.
+- Use active voice and concrete language.
+- Short sentences. Clear logic.
+- No filler phrases ("This highlights", "In a significant move", etc.).
+- Do NOT repeat the headline.
+- No em dashes or unicode dashes.
+- Maximum {max_words} words.
+
+Each summary should feel sharp and purposeful, not flat.
 
 You will receive a JSON list of stories grouped by section.
-Return a JSON list of objects:
+Return:
 [
   {{"title": "<exact original title>", "summary": "<your summary>"}},
   ...
 ]
-Return ONLY valid JSON, no markdown fences.
-""".format(max_words=STORY_MAX_WORDS)
+
+Return ONLY valid JSON. No markdown fences.
+""".format(max_words=STORY_MAX_WORDS).format(max_words=STORY_MAX_WORDS)
 
 _WATCHLIST_SYSTEM = """\
-You are a senior analyst writing the Watchlist section of a morning brief.
-Given headlines, produce short forward-looking bullets (one per story).
-Each bullet must start with one of:
-  "Watch for...", "Risk to monitor...", "Potential second-order impact..."
+You are writing the Watchlist section of a morning brief.
 
-Keep each bullet under 40 words. No em dashes. No filler.
-Return a JSON list: [{{"title": "...", "bullet": "..."}}]
-Return ONLY valid JSON, no markdown fences.
+For each headline:
+- Identify the next variable that could change the story.
+- Point to a trigger, escalation risk, policy response, or measurable signal.
+- Be concrete. Avoid vague macro language.
+- Under 40 words.
+- No em dashes.
+- No filler.
+
+Each bullet must start with one of:
+  "Watch for..."
+  "Risk to monitor..."
+  "Potential second-order impact..."
+
+Return:
+[{{"title": "...", "bullet": "..."}}]
+
+Return ONLY valid JSON. No markdown fences.
 """
 
 
@@ -98,7 +117,13 @@ def _llm_summarize(stories: list[dict[str, Any]]) -> dict[str, str]:
                 span.set_attribute("llm.completion_tokens", usage.completion_tokens)
                 span.set_attribute("llm.total_tokens", usage.total_tokens)
             raw = resp.choices[0].message.content or "[]"
-            raw = raw.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+            raw = (
+                raw.strip()
+                .removeprefix("```json")
+                .removeprefix("```")
+                .removesuffix("```")
+                .strip()
+            )
             results = json.loads(raw)
             return {r["title"]: r["summary"] for r in results if "title" in r}
         except Exception:
@@ -135,7 +160,13 @@ def _llm_watchlist(stories: list[dict[str, Any]]) -> dict[str, str]:
                 span.set_attribute("llm.completion_tokens", usage.completion_tokens)
                 span.set_attribute("llm.total_tokens", usage.total_tokens)
             raw = resp.choices[0].message.content or "[]"
-            raw = raw.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+            raw = (
+                raw.strip()
+                .removeprefix("```json")
+                .removeprefix("```")
+                .removesuffix("```")
+                .strip()
+            )
             results = json.loads(raw)
             return {r["title"]: r["bullet"] for r in results if "title" in r}
         except Exception:
@@ -190,7 +221,7 @@ def _story_row(idx: int, story: dict[str, Any], summary: str) -> str:
         tags = ", ".join(specials)
         special_tag = (
             f'<span style="display:inline-block; margin-left:6px; '
-            f'font-size:11px; background:#fff3e0; color:#e65100; '
+            f"font-size:11px; background:#fff3e0; color:#e65100; "
             f'padding:1px 6px; border-radius:3px;">{tags}</span>'
         )
     return f"""
@@ -215,7 +246,7 @@ def _watchlist_bullet(story: dict[str, Any], bullet: str) -> str:
     return (
         f'<li style="margin-bottom:6px; font-size:14px; color:#222;">'
         f'<a href="{link}" style="color:#1a73e8; text-decoration:none;">'
-        f'{story["title"]}</a><br/>'
+        f"{story['title']}</a><br/>"
         f'<span style="color:#555;">{bullet}</span></li>'
     )
 
@@ -225,11 +256,12 @@ def _section_header(section_key: str) -> str:
     return (
         f'<h3 style="color:{meta["color"]}; margin:28px 0 10px; '
         f'border-bottom:1px solid {meta["color"]}; padding-bottom:4px;">'
-        f'{meta["icon"]} {meta["label"]}</h3>'
+        f"{meta['icon']} {meta['label']}</h3>"
     )
 
 
 # ── Public API ──────────────────────────────────────────────────────────────
+
 
 def build_digest(
     buckets: dict[str, list[dict[str, Any]]],
@@ -252,7 +284,13 @@ def build_digest(
         # Collect all non-watchlist stories for a single summarise call
         non_wl_stories = [
             s
-            for key in ("headline", "global_news", "ai_tech", "macro_markets", "merger_news")
+            for key in (
+                "headline",
+                "global_news",
+                "ai_tech",
+                "macro_markets",
+                "merger_news",
+            )
             for s in buckets.get(key, [])
         ]
         summaries = _llm_summarize(non_wl_stories)
