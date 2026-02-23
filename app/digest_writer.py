@@ -39,7 +39,7 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 # ── LLM summariser prompt ──────────────────────────────────────────────────
 
-_SUMMARY_SYSTEM = """\
+_SUMMARY_SYSTEM = f"""
 You are writing a high-signal morning brief for an informed reader.
 The goal is clarity and consequence, not narration.
 
@@ -49,22 +49,21 @@ Rules:
 - Be analytical, not descriptive.
 - Use active voice and concrete language.
 - Short sentences. Clear logic.
-- No filler phrases ("This highlights", "In a significant move", etc.).
-- Do NOT repeat the headline.
+- No filler phrases such as "This highlights" or "In a significant move".
+- Do not repeat the headline.
 - No em dashes or unicode dashes.
-- Maximum {max_words} words.
+- Maximum {STORY_MAX_WORDS} words.
 
 Each summary should feel sharp and purposeful, not flat.
 
 You will receive a JSON list of stories grouped by section.
-Return:
+Return a JSON list of objects in this format:
 [
-  {{"title": "<exact original title>", "summary": "<your summary>"}},
-  ...
+  {{"title": "<exact original title>", "summary": "<your summary>"}}
 ]
 
 Return ONLY valid JSON. No markdown fences.
-""".format(max_words=STORY_MAX_WORDS).format(max_words=STORY_MAX_WORDS)
+"""
 
 _WATCHLIST_SYSTEM = """\
 You are writing the Watchlist section of a morning brief.
