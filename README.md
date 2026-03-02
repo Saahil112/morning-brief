@@ -1,6 +1,6 @@
 # Morning Brief
 
-A containerised agent that aggregates RSS news, classifies headlines using dual-trigger logic (LLM relevance + macro cross-feed threshold), and delivers a structured HTML digest to your inbox at 9:30 AM daily via the Gmail API.
+A containerised agent that aggregates RSS news, classifies headlines using dual-trigger logic (LLM relevance + macro cross-feed threshold), and delivers a structured HTML digest to your inbox at 9:30 AM daily via Gmail SMTP.
 
 ## Digest Structure
 
@@ -26,7 +26,7 @@ morning-brief/
 |   |-- news_fetcher.py    # RSS aggregation and dedup
 |   |-- classifier.py      # Dual-trigger, section-based classification
 |   |-- digest_writer.py   # Structured HTML digest builder (6 sections)
-|   |-- gmail_sender.py    # Gmail API OAuth sender
+|   |-- gmail_sender.py    # Gmail SMTP sender (App Password)
 |-- .env                   # Environment variables (git-ignored)
 |-- .gitignore
 |-- requirements.txt
@@ -53,8 +53,7 @@ Create a `.env` file (or set in Cloud Run):
 OPENAI_API_KEY=sk-...
 GMAIL_SENDER=you@gmail.com
 GMAIL_RECIPIENT=you@gmail.com
-GMAIL_CREDENTIALS_JSON=credentials.json
-GMAIL_TOKEN_JSON=token.json
+GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
 
 # Optional: override feed lists (comma-separated)
 RSS_FEEDS_GLOBAL=https://feeds.bbci.co.uk/news/world/rss.xml,...
@@ -74,12 +73,11 @@ STORY_MAX_WORDS=300
 OPENAI_MODEL=gpt-4o
 ```
 
-### 2. Gmail OAuth
+### 2. Gmail App Password
 
-1. Create an OAuth 2.0 Client ID in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
-2. Download the client secret JSON and save as `credentials.json`.
-3. Run the app locally once. It will open a browser for consent and create `token.json`.
-4. Upload `token.json` alongside the container (or mount as a secret).
+1. Enable **2-Step Verification** on your Google account.
+2. Go to [App Passwords](https://myaccount.google.com/apppasswords) and generate one for "Mail".
+3. Copy the 16-character password into `GMAIL_APP_PASSWORD` in your `.env` (or Cloud Run env vars).
 
 ### 3. Run Locally
 
@@ -103,7 +101,7 @@ gcloud run deploy morning-brief \
   --source . \
   --region us-central1 \
   --allow-unauthenticated=false \
-  --set-env-vars OPENAI_API_KEY=sk-...,GMAIL_SENDER=you@gmail.com,GMAIL_RECIPIENT=you@gmail.com
+  --set-env-vars OPENAI_API_KEY=sk-...,GMAIL_SENDER=you@gmail.com,GMAIL_RECIPIENT=you@gmail.com,GMAIL_APP_PASSWORD=xxxx...
 ```
 
 ### 6. Cloud Scheduler (9:30 AM daily)
@@ -131,7 +129,7 @@ Every pipeline run is fully traced via OpenTelemetry. On Cloud Run, spans export
 | `llm_summarize` | Token usage (same as above) |
 | `llm_watchlist` | Token usage (same as above) |
 | `build_digest` | `digest.total_stories` |
-| `send_email` | `email.recipient`, `email.subject`, `email.message_id` |
+| `send_email` | `email.recipient`, `email.subject`, `email.status` |
 
 FastAPI inbound requests and outbound HTTP calls (via `requests`) are auto-instrumented.
 

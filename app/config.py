@@ -12,14 +12,10 @@ load_dotenv()
 OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-5.2")
 
-# ── Gmail OAuth ─────────────────────────────────────────────────────────────
-GMAIL_CREDENTIALS_JSON: str = os.getenv("GMAIL_CREDENTIALS_JSON", "credentials.json")
-GMAIL_TOKEN_JSON: str = os.getenv("GMAIL_TOKEN_JSON", "token.json")
+# ── Gmail SMTP ──────────────────────────────────────────────────────────────
 GMAIL_SENDER: str = os.getenv("GMAIL_SENDER", "")
 GMAIL_RECIPIENT: str = os.getenv("GMAIL_RECIPIENT", "")
-GMAIL_CLIENT_ID: str = os.getenv("GMAIL_CLIENT_ID", "")
-GMAIL_CLIENT_SECRET: str = os.getenv("GMAIL_CLIENT_SECRET", "")
-GMAIL_REFRESH_TOKEN: str = os.getenv("GMAIL_REFRESH_TOKEN", "")
+GMAIL_APP_PASSWORD: str = os.getenv("GMAIL_APP_PASSWORD", "")
 
 # ── RSS Feeds ───────────────────────────────────────────────────────────────
 # Comma-separated list of RSS / Atom feed URLs.
