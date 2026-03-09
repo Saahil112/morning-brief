@@ -71,7 +71,7 @@ SPECIAL_SITUATIONS_KEYWORDS: list[str] = [
     for kw in os.getenv(
         "SPECIAL_SITUATIONS_KEYWORDS",
         "takeover,demerger,split,reverse split,hiving off,"
-        "activist investor,merger,acquisition,IPO,SPAC,"
+        "activist investor,merger,acquisition,IPO,"
         "spin-off,spinoff,carve-out,carveout,restructuring",
     ).split(",")
     if kw.strip()
