@@ -11,7 +11,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from app.config import GMAIL_APP_PASSWORD, GMAIL_RECIPIENT, GMAIL_SENDER
+from app.config import GMAIL_APP_PASSWORD, GMAIL_RECIPIENTS, GMAIL_SENDER
 from app.tracing import get_tracer
 
 logger = logging.getLogger(__name__)
@@ -33,12 +33,12 @@ def send_email(subject: str, html_body: str) -> None:
         Full HTML content of the email.
     """
     with tracer.start_as_current_span("send_email") as span:
-        span.set_attribute("email.recipient", GMAIL_RECIPIENT)
+        span.set_attribute("email.recipients", ", ".join(GMAIL_RECIPIENTS))
         span.set_attribute("email.subject", subject)
 
         message = MIMEMultipart("alternative")
         message["From"] = GMAIL_SENDER
-        message["To"] = GMAIL_RECIPIENT
+        message["To"] = ", ".join(GMAIL_RECIPIENTS)
         message["Subject"] = subject
 
         # Plain-text fallback
@@ -49,7 +49,7 @@ def send_email(subject: str, html_body: str) -> None:
 
         with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
             server.login(GMAIL_SENDER, GMAIL_APP_PASSWORD)
-            server.send_message(message)
+            server.sendmail(GMAIL_SENDER, GMAIL_RECIPIENTS, message.as_string())
 
-        logger.info("Email sent via SMTP to %s", GMAIL_RECIPIENT)
+        logger.info("Email sent via SMTP to %s", GMAIL_RECIPIENTS)
         span.set_attribute("email.status", "sent")

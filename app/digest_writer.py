@@ -70,7 +70,7 @@ You are writing the Watchlist section of a morning brief.
 
 For each headline:
 - Identify the next variable that could change the story.
-- Point to a trigger, escalation risk, policy response, or measurable signal.
+- Connect to why it matters for the reader (e.g. market impact, second-order effects).
 - Be concrete. Avoid vague macro language.
 - Under 40 words.
 - No em dashes.
@@ -78,7 +78,6 @@ For each headline:
 
 Each bullet must start with one of:
   "Watch for..."
-  "Risk to monitor..."
   "Potential second-order impact..."
 
 Return:

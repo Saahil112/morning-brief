@@ -14,7 +14,10 @@ OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-5.2")
 
 # ── Gmail SMTP ──────────────────────────────────────────────────────────────
 GMAIL_SENDER: str = os.getenv("GMAIL_SENDER", "")
-GMAIL_RECIPIENT: str = os.getenv("GMAIL_RECIPIENT", "")
+_GMAIL_RECIPIENT_RAW: str = os.getenv("GMAIL_RECIPIENT", "")
+GMAIL_RECIPIENTS: list[str] = [
+    r.strip() for r in _GMAIL_RECIPIENT_RAW.split(",") if r.strip()
+]
 GMAIL_APP_PASSWORD: str = os.getenv("GMAIL_APP_PASSWORD", "")
 
 # ── RSS Feeds ───────────────────────────────────────────────────────────────

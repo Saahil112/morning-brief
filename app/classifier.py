@@ -98,7 +98,7 @@ Sections (use these exact keys):
 Return ONLY valid JSON (no markdown fences), a list of objects:
 [
   {{
-    "title": "<exact original title>",
+    "id": <integer id from input>,
     "relevant": true,
     "section": "<section key>",
     "reason": "<one sentence>"
@@ -118,12 +118,18 @@ _LLM_BATCH_SIZE = 50
 
 def _llm_classify_batch(
     stories: list[dict[str, Any]],
+    id_offset: int = 0,
     span_parent: Any = None,
 ) -> tuple[list[dict], dict]:
     """Classify a single batch; return (results_list, usage_totals)."""
     payload = [
-        {"title": s["title"], "source": s["source"], "summary": s.get("summary", "")}
-        for s in stories
+        {
+            "id": id_offset + i,
+            "title": s["title"],
+            "source": s["source"],
+            "summary": s.get("summary", ""),
+        }
+        for i, s in enumerate(stories)
     ]
     resp = client.chat.completions.create(
         model=OPENAI_MODEL,
@@ -185,7 +191,8 @@ def _llm_classify(
 
         for batch_idx, batch in enumerate(batches):
             try:
-                results, usage = _llm_classify_batch(batch, span)
+                id_offset = batch_idx * _LLM_BATCH_SIZE
+                results, usage = _llm_classify_batch(batch, id_offset, span)
                 all_results.extend(results)
                 total_prompt += usage["prompt_tokens"]
                 total_completion += usage["completion_tokens"]
@@ -205,11 +212,13 @@ def _llm_classify(
         span.set_attribute("llm.completion_tokens", total_completion)
         span.set_attribute("llm.total_tokens", total_tokens)
 
-    title_to_fp = {s["title"]: s["fingerprint"] for s in stories}
+    id_to_fp = {i: s["fingerprint"] for i, s in enumerate(stories)}
     out: dict[str, dict[str, Any]] = {}
     for r in all_results:
-        title = r.get("title", "")
-        fp = title_to_fp.get(title)
+        story_id = r.get("id")
+        if story_id is None:
+            continue
+        fp = id_to_fp.get(story_id)
         if not fp:
             continue
         section = r.get("section", "global_news")
